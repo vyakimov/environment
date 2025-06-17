@@ -1,0 +1,89 @@
+FROM ubuntu:22.04
+ENV DEBIAN_FRONTEND=noninteractive
+ARG USER_ID=1000
+ARG GROUP_ID=1000
+ARG PYTHON_V=3.10.13
+
+# Set up locale and install curl
+RUN apt-get update && \
+  apt-get install -y locales curl && \
+  locale-gen en_US.UTF-8 && \
+  update-locale LANG=en_US.UTF-8
+
+# Set environment variables
+ENV LANG=en_US.UTF-8 \
+  LANGUAGE=en_US:en \
+  LC_ALL=en_US.UTF-8 \
+  TERM=alacritty
+
+# setup R repo
+RUN curl -fsSL https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc | tee -a /etc/apt/trusted.gpg.d/cran_ubuntu_key.asc &&\
+  echo "deb https://cloud.r-project.org/bin/linux/ubuntu jammy-cran40/" >> /etc/apt/sources.list
+
+
+# install dependencies
+RUN apt-get update && apt-get install -y \
+  r-base git fzf ripgrep build-essential fd-find software-properties-common \
+  zsh wget unzip luarocks tmux \
+  make libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev \
+  llvm libncursesw5-dev xz-utils tk-dev libxml2-dev libffi-dev liblzma-dev \
+  ca-certificates  && rm -rf /var/lib/apt/lists/*
+
+# install lazygit
+RUN LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" | \
+  grep -Po '"tag_name": *"v\K[^"]*') && \
+  curl -Lo lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/download/v${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz" && \
+  tar xf lazygit.tar.gz lazygit && \
+  install lazygit -D -t /usr/local/bin/
+
+#install node
+RUN curl -LO https://nodejs.org/dist/v22.16.0/node-v22.16.0-linux-x64.tar.xz && \
+  tar xf node-v22.16.0-linux-x64.tar.xz -C /opt/ && \
+  ln -s /opt/node-v22.16.0-linux-x64/bin/* /usr/local/bin/
+
+# install neovim
+RUN curl -LO https://github.com/neovim/neovim/releases/download/v0.11.2/nvim-linux-x86_64.tar.gz && \
+  tar xzf nvim-linux-x86_64.tar.gz -C /opt && \
+  ln -s /opt/nvim-linux-x86_64/bin/nvim /usr/local/bin/nvim
+
+
+# create user
+RUN getent group $GROUP_ID || groupadd -g $GROUP_ID user && \
+	useradd -r -u $USER_ID -g $GROUP_ID user
+USER user
+WORKDIR /home/user
+
+# install pyenv and CPython 3.10
+ENV PYENV_ROOT="/home/user/.pyenv"
+ENV PATH="$PYENV_ROOT/bin:$PYENV_ROOT/shims:$PATH"
+
+RUN curl https://pyenv.run | bash && \
+  export PYENV_ROOT="$HOME/.pyenv" && \
+  export PATH="$PYENV_ROOT/bin:$PYENV_ROOT/shims:$PATH" && \
+  eval "$(pyenv init --path)" && \
+  eval "$(pyenv init -)" && \
+  pyenv install $PYTHON_V && \
+  pyenv global $PYTHON_V
+
+# make pyenv Python available for shell and Neovim
+RUN echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bashrc && \
+  echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.bashrc && \
+  echo 'eval "$(pyenv init --path)"' >> ~/.bashrc && \
+  echo 'eval "$(pyenv init -)"' >> ~/.bashrc
+
+# ensure pip is installed and usable
+RUN ~/.pyenv/shims/pip install --upgrade pip ipython pyright
+
+# setup neovim config
+RUN git clone https://github.com/vyakimov/neovim_setup.git ~/.config/nvim && \
+  nvim --headless "+Lazy! sync" +qa && \
+  nvim --headless "+MasonUpdate" +qa
+
+COPY bootstrap.sh .
+RUN ./bootstrap.sh &&\
+  echo "set-option -ga terminal-overrides ',xterm:Tc'" >> "$HOME/.tmux.conf" &&\
+  curl -sSL https://raw.githubusercontent.com/alacritty/alacritty/master/extra/alacritty.info | tic -x -
+
+
+WORKDIR /app
+
