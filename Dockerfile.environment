@@ -76,8 +76,7 @@ RUN ~/.pyenv/shims/pip install --upgrade pip ipython pyright
 
 # setup neovim config
 RUN git clone https://github.com/vyakimov/neovim_setup.git ~/.config/nvim && \
-  nvim --headless "+Lazy! sync" +qa && \
-  nvim --headless "+MasonUpdate" +qa
+  nvim --headless -c "+Lazy! sync" +qa 
 
 COPY bootstrap.sh .
 RUN ./bootstrap.sh &&\

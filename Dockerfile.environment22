@@ -27,7 +27,7 @@ RUN apt-get update && apt-get install -y \
   zsh wget unzip luarocks tmux \
   make libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev \
   llvm libncursesw5-dev xz-utils tk-dev libxml2-dev libffi-dev liblzma-dev \
-  ca-certificates  && rm -rf /var/lib/apt/lists/*
+  ca-certificates && rm -rf /var/lib/apt/lists/*
 
 # install lazygit
 RUN LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" | \
@@ -76,8 +76,7 @@ RUN ~/.pyenv/shims/pip install --upgrade pip ipython pyright
 
 # setup neovim config
 RUN git clone https://github.com/vyakimov/neovim_setup.git ~/.config/nvim && \
-  nvim --headless "+Lazy! sync" +qa && \
-  nvim --headless "+MasonUpdate" +qa
+  nvim --headless "+Lazy! sync" +qa
 
 COPY bootstrap.sh .
 RUN ./bootstrap.sh &&\
