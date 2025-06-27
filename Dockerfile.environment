@@ -4,11 +4,17 @@ ARG USER_ID=1000
 ARG GROUP_ID=1000
 ARG PYTHON_V=3.10.13
 
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
 # Set up locale and install curl
-RUN apt-get update && \
-  apt-get install -y locales curl && \
-  locale-gen en_US.UTF-8 && \
-  update-locale LANG=en_US.UTF-8
+RUN apt-get update \
+  && apt-get install -y \
+  locales=2.39-0ubuntu8.4\
+  curl=8.5.0-2ubuntu10.6 \
+  xclip=0.13-3 \
+  xsel=1.2.1-1 \
+  && locale-gen en_US.UTF-8 \
+  && update-locale LANG=en_US.UTF-8
 
 # Set environment variables
 ENV LANG=en_US.UTF-8 \
@@ -46,10 +52,12 @@ RUN curl -LO https://github.com/neovim/neovim/releases/download/v0.11.2/nvim-lin
   tar xzf nvim-linux-x86_64.tar.gz -C /opt && \
   ln -s /opt/nvim-linux-x86_64/bin/nvim /usr/local/bin/nvim
 
+# make alacritty known
+RUN curl -sSL https://raw.githubusercontent.com/alacritty/alacritty/master/extra/alacritty.info | tic -x -
 
 # create user
 RUN getent group $GROUP_ID || groupadd -g $GROUP_ID user && \
-	useradd -r -u $USER_ID -g $GROUP_ID user
+  useradd -r -u $USER_ID -g $GROUP_ID user
 USER user
 WORKDIR /home/user
 
@@ -79,10 +87,7 @@ RUN git clone https://github.com/vyakimov/neovim_setup.git ~/.config/nvim && \
   nvim --headless -c "+Lazy! sync" +qa 
 
 COPY bootstrap.sh .
-RUN ./bootstrap.sh &&\
-  echo "set-option -ga terminal-overrides ',xterm:Tc'" >> "$HOME/.tmux.conf" &&\
-  curl -sSL https://raw.githubusercontent.com/alacritty/alacritty/master/extra/alacritty.info | tic -x -
-
+RUN ./bootstrap.sh
 
 WORKDIR /app
 
