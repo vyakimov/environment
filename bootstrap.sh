@@ -11,3 +11,6 @@ git clone https://github.com/softmoth/zsh-vim-mode.git ${HOME}/.oh-my-zsh/plugin
 curl -L https://iterm2.com/shell_integration/zsh \
   -o $HOME/.iterm2_shell_integration.zsh &&
   printf "\nsource ~/.iterm2_shell_integration.zsh\n" >>$HOME/.zshrc
+echo "set-option -ga terminal-overrides ',xterm:Tc'" >>"$HOME/.tmux.conf" &&
+  echo "set -g set-clipboard on # nvim osc52" >>$HOME/.tmux.conf &&
+  echo "set -g allow-passthrough on #nvim osc52" >>$HOME/.tmux.conf
