@@ -1,2 +1,6 @@
-docker run --rm -v $PWD:/app/ --env-file .secrets -it environment /bin/zsh
-
+docker run \
+  -it \
+  --rm \
+  -v $PWD:/app/ \
+  --env-file .secrets \
+  environment /bin/zsh

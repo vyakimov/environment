@@ -31,6 +31,8 @@ RUN apt-get update && apt-get install -y \
   llvm libncursesw5-dev xz-utils tk-dev libxml2-dev libffi-dev liblzma-dev \
   ca-certificates && rm -rf /var/lib/apt/lists/*
 
+RUN sed -i '$d' /etc/apt/sources.list # remove R repo 
+
 # install lazygit
 RUN LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" | \
   grep -Po '"tag_name": *"v\K[^"]*') && \
