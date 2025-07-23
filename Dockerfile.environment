@@ -9,10 +9,10 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 # Set up locale and install curl
 RUN apt-get update \
   && apt-get install -y \
-  locales=2.39-0ubuntu8.4\
-  curl=8.5.0-2ubuntu10.6 \
-  xclip=0.13-3 \
-  xsel=1.2.1-1 \
+  locales \
+  curl \
+  xclip \
+  xsel \
   && locale-gen en_US.UTF-8 \
   && update-locale LANG=en_US.UTF-8
 
@@ -59,7 +59,7 @@ RUN curl -sSL https://raw.githubusercontent.com/alacritty/alacritty/master/extra
 
 # create user
 RUN getent group $GROUP_ID || groupadd -g $GROUP_ID user && \
-  useradd -r -u $USER_ID -g $GROUP_ID user
+  useradd -r -l -u $USER_ID -g $GROUP_ID user
 USER user
 WORKDIR /home/user
 

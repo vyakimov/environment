@@ -53,7 +53,7 @@ RUN curl -LO https://github.com/neovim/neovim/releases/download/v0.11.2/nvim-lin
 
 # create user
 RUN getent group $GROUP_ID || groupadd -g $GROUP_ID user && \
-  useradd -r -u $USER_ID -g $GROUP_ID user
+  useradd -r -l -u $USER_ID -g $GROUP_ID user
 USER user
 WORKDIR /home/user
 
