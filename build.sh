@@ -1,10 +1,10 @@
 #!/bin/bash
 case "$1" in
-build)
+env)
   echo "building environment"
   docker build --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PYTHON_V=3.10.13 -f Dockerfile.environment"$2" -t environment:latest .
   ;;
-rebuild)
+rebuild-env)
   echo "force building environment"
   docker build --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PYTHON_V=3.10.13 -f Dockerfile.environment"$2" -t environment:latest --no-cache .
   ;;
@@ -27,7 +27,7 @@ run)
     environment /bin/zsh
   ;;
 *)
-  echo "Usage: $0 {build|rebuild|run}"
+  echo "Usage: $0 {env|rebuild-env|python_base|run}"
   exit 1
   ;;
 esac

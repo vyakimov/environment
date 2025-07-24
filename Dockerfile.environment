@@ -41,7 +41,7 @@ RUN curl -LO https://github.com/neovim/neovim/releases/download/v0.11.2/nvim-lin
   tar xzf nvim-linux-x86_64.tar.gz -C /opt && \
   ln -s /opt/nvim-linux-x86_64/bin/nvim /usr/local/bin/nvim
 
-
+USER user
 
 # make pyenv Python available for shell and Neovim
 RUN echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bashrc && \
@@ -51,14 +51,16 @@ RUN echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bashrc && \
 
 # setup neovim config
 RUN git clone https://github.com/vyakimov/neovim_setup.git ~/.config/nvim && \
-  nvim --headless "+Lazy! sync" +qa
+  nvim --headless "+Lazy! sync" +qa \
+  && pip install --upgrade --no-cache-dir pip ipython pyright \
+  && rm -rf $PYENV_ROOT/cache ~/.cache/pip
 
-COPY bootstrap.sh .
+COPY --chown=user:user bootstrap.sh /home/user/bootstrap.sh
 
-RUN ./bootstrap.sh &&\
-  echo "set-option -ga terminal-overrides ',xterm:Tc'" >> "$HOME/.tmux.conf" &&\
+RUN chmod +x /home/user/bootstrap.sh && \
+  /home/user/bootstrap.sh && \
+  echo "set-option -ga terminal-overrides ',xterm:Tc'" >> ~/.tmux.conf && \
   curl -sSL https://raw.githubusercontent.com/alacritty/alacritty/master/extra/alacritty.info | tic -x -
-
 
 WORKDIR /app
 
