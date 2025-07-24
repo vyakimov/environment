@@ -1,20 +1,14 @@
-FROM ubuntu:24.04
+FROM python_base:latest
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 ENV DEBIAN_FRONTEND=noninteractive
 ARG USER_ID=1000
 ARG GROUP_ID=1000
-ARG PYTHON_V=3.10.13
-
-SHELL ["/bin/bash", "-o", "pipefail", "-c"]
-
 # Set up locale and install curl
-RUN apt-get update \
-  && apt-get install -y \
-  locales \
-  curl \
-  xclip \
-  xsel \
-  && locale-gen en_US.UTF-8 \
-  && update-locale LANG=en_US.UTF-8
+USER root
+RUN apt-get update && \
+  apt-get install -y locales curl && \
+  locale-gen en_US.UTF-8 && \
+  update-locale LANG=en_US.UTF-8
 
 # Set environment variables
 ENV LANG=en_US.UTF-8 \
@@ -22,20 +16,18 @@ ENV LANG=en_US.UTF-8 \
   LC_ALL=en_US.UTF-8 \
   TERM=alacritty
 
-# setup R repo
+# install dependencies and temporarily add r-repo
 RUN curl -fsSL https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc | tee -a /etc/apt/trusted.gpg.d/cran_ubuntu_key.asc &&\
-  echo "deb https://cloud.r-project.org/bin/linux/ubuntu noble-cran40/" >> /etc/apt/sources.list
-
-
-# install dependencies
-RUN apt-get update && apt-get install -y \
+  echo "deb https://cloud.r-project.org/bin/linux/ubuntu jammy-cran40/" >> /etc/apt/sources.list &&\
+  apt-get update && apt-get install -y \
   r-base git fzf ripgrep build-essential fd-find software-properties-common \
   zsh wget unzip luarocks tmux \
-  make libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev \
-  llvm libncursesw5-dev xz-utils tk-dev libxml2-dev libffi-dev liblzma-dev \
-  ca-certificates && rm -rf /var/lib/apt/lists/*
+  && apt-get clean && rm -rf /var/lib/apt/lists/* && sed -i '$d' /etc/apt/sources.list 
 
-RUN sed -i '$d' /etc/apt/sources.list # remove R repo 
+#install node
+RUN curl -LO https://nodejs.org/dist/v22.16.0/node-v22.16.0-linux-x64.tar.xz && \
+  tar xf node-v22.16.0-linux-x64.tar.xz -C /opt/ && \
+  ln -s /opt/node-v22.16.0-linux-x64/bin/* /usr/local/bin/
 
 # install lazygit
 RUN LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" | \
@@ -44,36 +36,12 @@ RUN LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygi
   tar xf lazygit.tar.gz lazygit && \
   install lazygit -D -t /usr/local/bin/
 
-#install node
-RUN curl -LO https://nodejs.org/dist/v22.16.0/node-v22.16.0-linux-x64.tar.xz && \
-  tar xf node-v22.16.0-linux-x64.tar.xz -C /opt/ && \
-  ln -s /opt/node-v22.16.0-linux-x64/bin/* /usr/local/bin/
-
 # install neovim
 RUN curl -LO https://github.com/neovim/neovim/releases/download/v0.11.2/nvim-linux-x86_64.tar.gz && \
   tar xzf nvim-linux-x86_64.tar.gz -C /opt && \
   ln -s /opt/nvim-linux-x86_64/bin/nvim /usr/local/bin/nvim
 
-# make alacritty known
-RUN curl -sSL https://raw.githubusercontent.com/alacritty/alacritty/master/extra/alacritty.info | tic -x -
 
-# create user
-RUN getent group $GROUP_ID || groupadd -g $GROUP_ID user && \
-  useradd -r -l -u $USER_ID -g $GROUP_ID user
-USER user
-WORKDIR /home/user
-
-# install pyenv and CPython 3.10
-ENV PYENV_ROOT="/home/user/.pyenv"
-ENV PATH="$PYENV_ROOT/bin:$PYENV_ROOT/shims:$PATH"
-
-RUN curl https://pyenv.run | bash && \
-  export PYENV_ROOT="$HOME/.pyenv" && \
-  export PATH="$PYENV_ROOT/bin:$PYENV_ROOT/shims:$PATH" && \
-  eval "$(pyenv init --path)" && \
-  eval "$(pyenv init -)" && \
-  pyenv install $PYTHON_V && \
-  pyenv global $PYTHON_V
 
 # make pyenv Python available for shell and Neovim
 RUN echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bashrc && \
@@ -81,15 +49,16 @@ RUN echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bashrc && \
   echo 'eval "$(pyenv init --path)"' >> ~/.bashrc && \
   echo 'eval "$(pyenv init -)"' >> ~/.bashrc
 
-# ensure pip is installed and usable
-RUN ~/.pyenv/shims/pip install --upgrade pip ipython pyright
-
 # setup neovim config
 RUN git clone https://github.com/vyakimov/neovim_setup.git ~/.config/nvim && \
-  nvim --headless -c "+Lazy! sync" +qa 
+  nvim --headless "+Lazy! sync" +qa
 
 COPY bootstrap.sh .
-RUN ./bootstrap.sh
+
+RUN ./bootstrap.sh &&\
+  echo "set-option -ga terminal-overrides ',xterm:Tc'" >> "$HOME/.tmux.conf" &&\
+  curl -sSL https://raw.githubusercontent.com/alacritty/alacritty/master/extra/alacritty.info | tic -x -
+
 
 WORKDIR /app
 
