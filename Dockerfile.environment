@@ -21,7 +21,7 @@ RUN curl -fsSL https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc 
   echo "deb https://cloud.r-project.org/bin/linux/ubuntu jammy-cran40/" >> /etc/apt/sources.list &&\
   apt-get update && apt-get install -y \
   r-base git fzf ripgrep build-essential fd-find software-properties-common \
-  zsh wget unzip luarocks tmux \
+  zsh wget unzip luarocks \
   && apt-get clean && rm -rf /var/lib/apt/lists/* && sed -i '$d' /etc/apt/sources.list 
 
 #install node
@@ -56,10 +56,13 @@ RUN git clone https://github.com/vyakimov/neovim_setup.git ~/.config/nvim && \
   && rm -rf $PYENV_ROOT/cache ~/.cache/pip
 
 COPY --chown=user:user bootstrap.sh /home/user/bootstrap.sh
+COPY --chown=user:user gitstatusd-linux-x86_64 /home/user/.cache/gitstatus/gitstatusd-linux-x86_64
 
 RUN chmod +x /home/user/bootstrap.sh && \
+  chmod +x /home/user/.cache/gitstatus/gitstatusd-linux-x86_64 && \
   /home/user/bootstrap.sh && \
   echo "set-option -ga terminal-overrides ',xterm:Tc'" >> ~/.tmux.conf && \
+  echo "set -g default-shell /usr/bin/zsh" >> ~/.tmux.conf && \
   curl -sSL https://raw.githubusercontent.com/alacritty/alacritty/master/extra/alacritty.info | tic -x -
 
 WORKDIR /app

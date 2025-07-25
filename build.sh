@@ -6,6 +6,7 @@ env)
   ;;
 rebuild-env)
   echo "force building environment"
+  ./build.sh python_base && \
   docker build --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PYTHON_V=3.10.13 -f Dockerfile.environment"$2" -t environment:latest --no-cache .
   ;;
 python_base)

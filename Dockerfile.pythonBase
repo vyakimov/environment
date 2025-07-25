@@ -32,13 +32,27 @@ RUN apt-get update && apt-get install -y \
   ca-certificates=20240203~22.04.1 \
   gnupg2=2.2.27-3ubuntu2.4 \
   wget=1.21.2-2ubuntu1.1 \
+  libevent-dev \
+  autotools-dev \
+  automake \
+  yacc \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+
+# Install TMUX
+RUN cd /opt/ && \
+  git clone https://github.com/tmux/tmux.git && \
+  cd tmux && \
+  sh autogen.sh && \
+  ./configure --enable-static && \
+  make && make install 
 
 # create user
 RUN getent group $GROUP_ID || groupadd -g $GROUP_ID user && \
   useradd -l -m -u $USER_ID -g $GROUP_ID user
 USER user
 WORKDIR /home/user
+
 
 
 # install pyenv and CPython 3.10
@@ -74,6 +88,8 @@ RUN getent group $GROUP_ID || groupadd -g $GROUP_ID user && \
   useradd -l -m -u $USER_ID -g $GROUP_ID user
 USER user
 COPY --from=builder /home/user/.pyenv /home/user/.pyenv
+COPY --from=builder /opt/tmux/tmux /usr/local/bin/tmux
+
 
 # make pyenv Python available for shell and Neovim
 RUN echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bashrc && \
