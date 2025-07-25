@@ -2,3 +2,4 @@ transcribe/
 transcribot*
 diarize/
 .secrets
+gitstatusd-linux-x86_64
