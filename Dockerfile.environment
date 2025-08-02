@@ -43,16 +43,10 @@ RUN curl -LO https://github.com/neovim/neovim/releases/download/v0.11.2/nvim-lin
 
 USER user
 
-# make pyenv Python available for shell and Neovim
-RUN echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bashrc && \
-  echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.bashrc && \
-  echo 'eval "$(pyenv init --path)"' >> ~/.bashrc && \
-  echo 'eval "$(pyenv init -)"' >> ~/.bashrc
-
 # setup neovim config
 RUN git clone https://github.com/vyakimov/neovim_setup.git ~/.config/nvim && \
   nvim --headless "+Lazy! sync" +qa \
-  && pip install --upgrade --no-cache-dir pip ipython pyright \
+  && uv pip install --upgrade --no-cache-dir ipython pyright \
   && rm -rf $PYENV_ROOT/cache ~/.cache/pip
 
 COPY --chown=user:user bootstrap.sh /home/user/bootstrap.sh

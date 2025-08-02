@@ -3,3 +3,7 @@ transcribot*
 diarize/
 .secrets
 gitstatusd-linux-x86_64
+embed_iaus/
+ras_rag/
+files/
+embeddings_nvidia/
