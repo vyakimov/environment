@@ -7,6 +7,7 @@ if [[ "$1" == "root" ]]; then
     --net=host \
     -v "$PWD":/app/ \
     -v "$HOME"/.ssh/:/home/user/.ssh/ \
+    -v "$HOME"/.claude/:/home/user/.claude/ \
     --env-file .secrets \
     --user root \
     environment /bin/zsh
@@ -17,6 +18,7 @@ else
     --net=host \
     -v "$PWD":/app/ \
     -v "$HOME"/.ssh/:/home/user/.ssh/ \
+    -v "$HOME"/.claude/:/home/user/.claude/ \
     --env-file .secrets \
     environment /bin/zsh
 fi

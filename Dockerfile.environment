@@ -27,7 +27,9 @@ RUN curl -fsSL https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc 
 #install node
 RUN curl -LO https://nodejs.org/dist/v22.16.0/node-v22.16.0-linux-x64.tar.xz && \
   tar xf node-v22.16.0-linux-x64.tar.xz -C /opt/ && \
-  ln -s /opt/node-v22.16.0-linux-x64/bin/* /usr/local/bin/
+  ln -s /opt/node-v22.16.0-linux-x64/bin/* /usr/local/bin/ && \
+  npm config set prefix /usr/local/ && \
+  npm install -g @anthropic-ai/claude-code mcp-hub
 
 # install lazygit
 RUN LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" | \
@@ -39,15 +41,19 @@ RUN LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygi
 # install neovim
 RUN curl -LO https://github.com/neovim/neovim/releases/download/v0.11.2/nvim-linux-x86_64.tar.gz && \
   tar xzf nvim-linux-x86_64.tar.gz -C /opt && \
-  ln -s /opt/nvim-linux-x86_64/bin/nvim /usr/local/bin/nvim
+  ln -s /opt/nvim-linux-x86_64/bin/nvim /usr/local/bin/nvim 
 
 USER user
 
 # setup neovim config
-RUN git clone https://github.com/vyakimov/neovim_setup.git ~/.config/nvim && \
+RUN uv python install 3.12 && uv venv --python 3.12 
+ENV VIRTUAL_ENV="/home/user/.venv"
+ENV PATH="/home/user/.local/bin:$VIRTUAL_ENV/bin:$PATH"
+
+RUN uv tool install 'vectorcode[lsp,mcp]' \
+  && git clone https://github.com/vyakimov/neovim_setup.git ~/.config/nvim && \
   nvim --headless "+Lazy! sync" +qa \
-  && uv pip install --upgrade --no-cache-dir ipython pyright \
-  && rm -rf $PYENV_ROOT/cache ~/.cache/pip
+  && uv pip install --upgrade --no-cache-dir ipython pyright
 
 COPY --chown=user:user bootstrap.sh /home/user/bootstrap.sh
 COPY --chown=user:user gitstatusd-linux-x86_64 /home/user/.cache/gitstatus/gitstatusd-linux-x86_64
@@ -55,8 +61,6 @@ COPY --chown=user:user gitstatusd-linux-x86_64 /home/user/.cache/gitstatus/gitst
 RUN chmod +x /home/user/bootstrap.sh && \
   chmod +x /home/user/.cache/gitstatus/gitstatusd-linux-x86_64 && \
   /home/user/bootstrap.sh && \
-  echo "set-option -ga terminal-overrides ',xterm:Tc'" >> ~/.tmux.conf && \
-  echo "set -g default-shell /usr/bin/zsh" >> ~/.tmux.conf && \
   curl -sSL https://raw.githubusercontent.com/alacritty/alacritty/master/extra/alacritty.info | tic -x -
 
 WORKDIR /app
