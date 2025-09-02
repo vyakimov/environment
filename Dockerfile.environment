@@ -29,7 +29,8 @@ RUN curl -LO https://nodejs.org/dist/v22.16.0/node-v22.16.0-linux-x64.tar.xz && 
   tar xf node-v22.16.0-linux-x64.tar.xz -C /opt/ && \
   ln -s /opt/node-v22.16.0-linux-x64/bin/* /usr/local/bin/ && \
   npm config set prefix /usr/local/ && \
-  npm install -g @anthropic-ai/claude-code mcp-hub
+  npm install -g @anthropic-ai/claude-code mcp-hub @openai/codex
+
 
 # install lazygit
 RUN LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" | \
