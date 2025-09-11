@@ -49,7 +49,9 @@ USER user
 # setup neovim config
 RUN uv python install 3.12 && uv venv --python 3.12 
 ENV VIRTUAL_ENV="/home/user/.venv"
-ENV PATH="/home/user/.local/bin:$VIRTUAL_ENV/bin:$PATH"
+ENV UV_CACHE_DIR="/home/user/.uv-cache"
+ENV UV_PROJECT_ENVIRONMENT="/home/user/.venv"
+ENV PATH="${VIRTUAL_ENV}/bin:/home/user/.local/bin:${PATH}"
 
 RUN uv tool install 'vectorcode[lsp,mcp]' \
   && git clone https://github.com/vyakimov/neovim_setup.git ~/.config/nvim && \
