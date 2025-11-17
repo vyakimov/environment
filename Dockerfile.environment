@@ -6,7 +6,7 @@ ARG GROUP_ID=1000
 # Set up locale and install curl
 USER root
 RUN apt-get update && \
-  apt-get install -y locales curl && \
+  apt-get install -y locales curl nvtop && \
   locale-gen en_US.UTF-8 && \
   update-locale LANG=en_US.UTF-8
 
@@ -29,7 +29,7 @@ RUN curl -LO https://nodejs.org/dist/v22.16.0/node-v22.16.0-linux-x64.tar.xz && 
   tar xf node-v22.16.0-linux-x64.tar.xz -C /opt/ && \
   ln -s /opt/node-v22.16.0-linux-x64/bin/* /usr/local/bin/ && \
   npm config set prefix /usr/local/ && \
-  npm install -g @anthropic-ai/claude-code mcp-hub @openai/codex
+  npm install -g @anthropic-ai/claude-code mcp-hub @openai/codex @github/copilot-language-server
 
 
 # install lazygit
@@ -40,7 +40,7 @@ RUN LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygi
   install lazygit -D -t /usr/local/bin/
 
 # install neovim
-RUN curl -LO https://github.com/neovim/neovim/releases/download/v0.11.2/nvim-linux-x86_64.tar.gz && \
+RUN curl -LO https://github.com/neovim/neovim/releases/download/v0.11.4/nvim-linux-x86_64.tar.gz && \
   tar xzf nvim-linux-x86_64.tar.gz -C /opt && \
   ln -s /opt/nvim-linux-x86_64/bin/nvim /usr/local/bin/nvim 
 

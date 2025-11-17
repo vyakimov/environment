@@ -8,6 +8,7 @@ if [[ "$1" == "root" ]]; then
     -v "$PWD":/app/ \
     -v "$HOME"/.ssh/:/home/user/.ssh/ \
     -v "$HOME"/.claude/:/home/user/.claude/ \
+    -v "$HOME"/.config/github-copilot/:/home/user/.config/github-copilot/ \
     --env-file .secrets \
     --user root \
     environment /bin/zsh
@@ -19,6 +20,7 @@ else
     -v "$PWD":/app/ \
     -v "$HOME"/.ssh/:/home/user/.ssh/ \
     -v "$HOME"/.claude/:/home/user/.claude/ \
+    -v "$HOME"/.config/github-copilot/:/home/user/.config/github-copilot/ \
     --env-file .secrets \
     environment /bin/zsh
 fi
