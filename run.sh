@@ -5,6 +5,7 @@ if [[ "$1" == "root" ]]; then
     -it \
     --rm \
     --net=host \
+    --gpus all \
     -v "$PWD":/app/ \
     -v "$HOME"/.ssh/:/home/user/.ssh/ \
     -v "$HOME"/.claude/:/home/user/.claude/ \
@@ -17,6 +18,7 @@ else
     -it \
     --rm \
     --net=host \
+    --gpus all \
     -v "$PWD":/app/ \
     -v "$HOME"/.ssh/:/home/user/.ssh/ \
     -v "$HOME"/.claude/:/home/user/.claude/ \
