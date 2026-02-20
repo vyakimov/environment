@@ -3,12 +3,6 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 ENV DEBIAN_FRONTEND=noninteractive
 ARG USER_ID=1000
 ARG GROUP_ID=1000
-# Set up locale and install curl
-USER root
-RUN apt-get update && \
-  apt-get install -y locales curl nvtop && \
-  locale-gen en_US.UTF-8 && \
-  update-locale LANG=en_US.UTF-8
 
 # Set environment variables
 ENV LANG=en_US.UTF-8 \
@@ -16,59 +10,20 @@ ENV LANG=en_US.UTF-8 \
   LC_ALL=en_US.UTF-8 \
   TERM=alacritty
 
-# install dependencies and temporarily add r-repo
-RUN curl -fsSL https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc | tee -a /etc/apt/trusted.gpg.d/cran_ubuntu_key.asc &&\
-  echo "deb https://cloud.r-project.org/bin/linux/ubuntu noble-cran40/" >> /etc/apt/sources.list &&\
-  apt-get update && apt-get install -y \
-  r-base git fzf ripgrep build-essential fd-find software-properties-common \
-  zsh wget unzip luarocks \
-  && apt-get clean && rm -rf /var/lib/apt/lists/* && sed -i '$d' /etc/apt/sources.list 
-
-#install node
-RUN NODE_VERSION=25.2.1 && curl -LO https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.gz && \
-  tar xf node-v${NODE_VERSION}-linux-x64.tar.gz -C /opt/ && \
-  ln -s /opt/node-v${NODE_VERSION}-linux-x64/bin/* /usr/local/bin/ && \
-  npm config set prefix /usr/local/ && \
-  npm install -g @anthropic-ai/claude-code mcp-hub @openai/codex @github/copilot-language-server @zed-industries/claude-code-acp && \
-  rm node-v${NODE_VERSION}-linux-x64.tar.gz
-
-
-# install lazygit
-RUN LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" | \
-  grep -Po '"tag_name": *"v\K[^"]*') && \
-  curl -Lo lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/download/v${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz" && \
-  tar xf lazygit.tar.gz lazygit && \
-  install lazygit -D -t /usr/local/bin/ && \
-  rm lazygit.tar.gz
-
-RUN CODEX_VERSION=0.9.2 && curl -sSL https://github.com/zed-industries/codex-acp/releases/download/v${CODEX_VERSION}/codex-acp-${CODEX_VERSION}-x86_64-unknown-linux-gnu.tar.gz | tar -xz -C /usr/local/bin
-# install neovim
-RUN NVIM_VERSION=0.11.5 && curl -LO https://github.com/neovim/neovim/releases/download/v${NVIM_VERSION}/nvim-linux-x86_64.tar.gz && \
-  tar xzf nvim-linux-x86_64.tar.gz -C /opt && \
-  ln -s /opt/nvim-linux-x86_64/bin/nvim /usr/local/bin/nvim 
+# System-level setup (root)
+COPY setup-system.sh /tmp/setup-system.sh
+RUN chmod +x /tmp/setup-system.sh && /tmp/setup-system.sh
 
 USER user
 
-# setup neovim config
-RUN uv python install 3.12 && uv venv --python 3.12 
 ENV VIRTUAL_ENV="/home/user/.venv"
 ENV UV_CACHE_DIR="/home/user/.uv-cache"
 ENV UV_PROJECT_ENVIRONMENT="/home/user/.venv"
 ENV PATH="${VIRTUAL_ENV}/bin:/home/user/.local/bin:${PATH}"
 
-RUN uv tool install 'vectorcode[lsp,mcp]' \
-  && git clone https://github.com/vyakimov/neovim_setup.git ~/.config/nvim && \
-  nvim --headless "+Lazy! sync" +qa \
-  && uv pip install --upgrade --no-cache-dir ipython pyright
-
+# User-level setup
+COPY --chown=user:user setup-user.sh /home/user/setup-user.sh
 COPY --chown=user:user bootstrap.sh /home/user/bootstrap.sh
-COPY --chown=user:user gitstatusd-linux-x86_64 /home/user/.cache/gitstatus/gitstatusd-linux-x86_64
-
-RUN chmod +x /home/user/bootstrap.sh && \
-  chmod +x /home/user/.cache/gitstatus/gitstatusd-linux-x86_64 && \
-  /home/user/bootstrap.sh && \
-  curl -sSL https://raw.githubusercontent.com/alacritty/alacritty/master/extra/alacritty.info | tic -x - && \
-  curl -sSL https://gist.githubusercontent.com/vyakimov/d17c01ab4ebab804e8393563980f557b/raw/9098c07250d144c71fd4bdb8873ec91673e68b14/ghostty.info | tic -x -
+RUN chmod +x /home/user/setup-user.sh /home/user/bootstrap.sh && /home/user/setup-user.sh
 
 WORKDIR /app
-
