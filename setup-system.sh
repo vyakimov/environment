@@ -15,10 +15,10 @@ locale-gen en_US.UTF-8
 update-locale LANG=en_US.UTF-8
 
 # ── R repository ──
-curl -fsSL https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc \
-  | tee -a /etc/apt/trusted.gpg.d/cran_ubuntu_key.asc >/dev/null
+curl -fsSL https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc |
+  tee -a /etc/apt/trusted.gpg.d/cran_ubuntu_key.asc >/dev/null
 echo "deb https://cloud.r-project.org/bin/linux/ubuntu noble-cran40/" \
-  >> /etc/apt/sources.list
+  >>/etc/apt/sources.list
 
 # ── APT packages ──
 apt-get update
@@ -35,7 +35,6 @@ tar xf "node-v${NODE_VERSION}-linux-x64.tar.gz" -C /opt/
 ln -sf /opt/node-v${NODE_VERSION}-linux-x64/bin/* /usr/local/bin/
 npm config set prefix /usr/local/
 npm install -g \
-  @anthropic-ai/claude-code \
   mcp-hub \
   @openai/codex \
   @github/copilot-language-server \
@@ -43,8 +42,8 @@ npm install -g \
 rm "node-v${NODE_VERSION}-linux-x64.tar.gz"
 
 # ── lazygit ──
-LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" \
-  | grep -Po '"tag_name": *"v\K[^"]*')
+LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" |
+  grep -Po '"tag_name": *"v\K[^"]*')
 curl -Lo /tmp/lazygit.tar.gz \
   "https://github.com/jesseduffield/lazygit/releases/download/v${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz"
 tar xf /tmp/lazygit.tar.gz -C /tmp lazygit
@@ -52,8 +51,8 @@ install /tmp/lazygit /usr/local/bin/
 rm /tmp/lazygit.tar.gz /tmp/lazygit
 
 # ── codex-acp ──
-curl -sSL "https://github.com/zed-industries/codex-acp/releases/download/v${CODEX_ACP_VERSION}/codex-acp-${CODEX_ACP_VERSION}-x86_64-unknown-linux-gnu.tar.gz" \
-  | tar -xz -C /usr/local/bin
+curl -sSL "https://github.com/zed-industries/codex-acp/releases/download/v${CODEX_ACP_VERSION}/codex-acp-${CODEX_ACP_VERSION}-x86_64-unknown-linux-gnu.tar.gz" |
+  tar -xz -C /usr/local/bin
 
 # ── Neovim ──
 curl -LO "https://github.com/neovim/neovim/releases/download/v${NVIM_VERSION}/nvim-linux-x86_64.tar.gz"

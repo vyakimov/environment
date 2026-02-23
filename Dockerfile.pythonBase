@@ -44,5 +44,6 @@ WORKDIR /home/user
 COPY --from=builder /usr/local/bin/tmux   /usr/local/bin/tmux
 
 WORKDIR /app
+USER root
 CMD ["/bin/bash"]
 

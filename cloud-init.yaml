@@ -1,4 +1,8 @@
 #cloud-config
+# GENERATED FILE — do not edit directly.
+# Edit cloud-init.yaml.tpl and the standalone .sh files, then run:
+#   python3 build-cloud-init.py
+#
 
 # User setup
 users:
@@ -84,10 +88,10 @@ write_files:
       update-locale LANG=en_US.UTF-8
 
       # ── R repository ──
-      curl -fsSL https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc \
-        | tee -a /etc/apt/trusted.gpg.d/cran_ubuntu_key.asc >/dev/null
+      curl -fsSL https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc |
+        tee -a /etc/apt/trusted.gpg.d/cran_ubuntu_key.asc >/dev/null
       echo "deb https://cloud.r-project.org/bin/linux/ubuntu noble-cran40/" \
-        >> /etc/apt/sources.list
+        >>/etc/apt/sources.list
 
       # ── APT packages ──
       apt-get update
@@ -104,7 +108,6 @@ write_files:
       ln -sf /opt/node-v${NODE_VERSION}-linux-x64/bin/* /usr/local/bin/
       npm config set prefix /usr/local/
       npm install -g \
-        @anthropic-ai/claude-code \
         mcp-hub \
         @openai/codex \
         @github/copilot-language-server \
@@ -112,8 +115,8 @@ write_files:
       rm "node-v${NODE_VERSION}-linux-x64.tar.gz"
 
       # ── lazygit ──
-      LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" \
-        | grep -Po '"tag_name": *"v\K[^"]*')
+      LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" |
+        grep -Po '"tag_name": *"v\K[^"]*')
       curl -Lo /tmp/lazygit.tar.gz \
         "https://github.com/jesseduffield/lazygit/releases/download/v${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz"
       tar xf /tmp/lazygit.tar.gz -C /tmp lazygit
@@ -121,8 +124,8 @@ write_files:
       rm /tmp/lazygit.tar.gz /tmp/lazygit
 
       # ── codex-acp ──
-      curl -sSL "https://github.com/zed-industries/codex-acp/releases/download/v${CODEX_ACP_VERSION}/codex-acp-${CODEX_ACP_VERSION}-x86_64-unknown-linux-gnu.tar.gz" \
-        | tar -xz -C /usr/local/bin
+      curl -sSL "https://github.com/zed-industries/codex-acp/releases/download/v${CODEX_ACP_VERSION}/codex-acp-${CODEX_ACP_VERSION}-x86_64-unknown-linux-gnu.tar.gz" |
+        tar -xz -C /usr/local/bin
 
       # ── Neovim ──
       curl -LO "https://github.com/neovim/neovim/releases/download/v${NVIM_VERSION}/nvim-linux-x86_64.tar.gz"
@@ -146,6 +149,8 @@ write_files:
         curl -LsSf https://astral.sh/uv/install.sh | sh
         export PATH="$HOME/.local/bin:$PATH"
       fi
+
+      curl -fsSL https://claude.ai/install.sh | bash
 
       uv python install 3.12
       uv venv --python 3.12
@@ -178,10 +183,10 @@ write_files:
       chmod +x "$HOME/.cache/gitstatus/gitstatusd-linux-x86_64"
 
       # ── Terminfo ──
-      curl -sSL https://raw.githubusercontent.com/alacritty/alacritty/master/extra/alacritty.info \
-        | tic -x - 2>/dev/null || true
-      curl -sSL https://gist.githubusercontent.com/vyakimov/d17c01ab4ebab804e8393563980f557b/raw/9098c07250d144c71fd4bdb8873ec91673e68b14/ghostty.info \
-        | tic -x - 2>/dev/null || true
+      curl -sSL https://raw.githubusercontent.com/alacritty/alacritty/master/extra/alacritty.info |
+        tic -x - 2>/dev/null || true
+      curl -sSL https://gist.githubusercontent.com/vyakimov/d17c01ab4ebab804e8393563980f557b/raw/9098c07250d144c71fd4bdb8873ec91673e68b14/ghostty.info |
+        tic -x - 2>/dev/null || true
 
       echo "User setup complete."
 
@@ -191,66 +196,136 @@ write_files:
     owner: vya:vya
     content: |
       #!/bin/bash
-      set -e
+      set -e # Exit on error
+      # Colors for output
       RED='\033[0;31m'
       GREEN='\033[0;32m'
       YELLOW='\033[1;33m'
-      NC='\033[0m'
+      NC='\033[0m' # No Color
 
       echo -e "${GREEN}Starting dotfiles setup...${NC}"
 
+      # Add .cfg.git to gitignore if not already present
       if ! grep -q "^\.cfg\.git$" "$HOME/.gitignore" 2>/dev/null; then
         echo ".cfg.git" >>"$HOME/.gitignore"
-        echo -e "${GREEN}Added .cfg.git to .gitignore${NC}"
+        echo -e "${GREEN}✓ Added .cfg.git to .gitignore${NC}"
+      else
+        echo -e "${YELLOW}→ .cfg.git already in .gitignore${NC}"
       fi
 
+      # Clone bare repository
       echo -e "${GREEN}Cloning dotfiles repository...${NC}"
       if [ -d "$HOME/.cfg.git" ]; then
+        echo -e "${YELLOW}→ .cfg.git already exists, removing...${NC}"
         rm -rf "$HOME/.cfg.git"
       fi
       git clone --bare https://github.com/vyakimov/dotfiles.git "$HOME/.cfg.git"
+      echo -e "${GREEN}✓ Dotfiles repository cloned${NC}"
 
+      # Create backup directory
       mkdir -p "$HOME/.config-backup"
+      echo -e "${GREEN}✓ Created backup directory${NC}"
 
+      # Backup conflicting files
+      echo -e "${GREEN}Checking for conflicting files...${NC}"
       CONFLICTS=$(git --git-dir="$HOME/.cfg.git/" --work-tree="$HOME" checkout 2>&1 | grep -E "^\s+" | awk '{print $1}' || true)
 
       if [ -n "$CONFLICTS" ]; then
         echo -e "${YELLOW}Found conflicting files, backing up:${NC}"
         echo "$CONFLICTS" | while read -r file; do
-          if [ -n "$file" ] && [ -e "$HOME/$file" ]; then
+          if [ -n "$file" ]; then
+            # Create the parent directory in backup location
             mkdir -p "$HOME/.config-backup/$(dirname "$file")"
-            mv "$HOME/$file" "$HOME/.config-backup/$file"
-            echo -e "  ${YELLOW}Backed up: $file${NC}"
+            # Move the conflicting file to backup
+            if [ -e "$HOME/$file" ]; then
+              mv "$HOME/$file" "$HOME/.config-backup/$file"
+              echo -e "  ${YELLOW}→ Backed up: $file${NC}"
+            fi
           fi
         done
+        echo -e "${GREEN}✓ Conflicting files backed up${NC}"
+      else
+        echo -e "${GREEN}✓ No conflicting files found${NC}"
       fi
 
+      # Checkout dotfiles
+      echo -e "${GREEN}Checking out dotfiles...${NC}"
       git --git-dir="$HOME/.cfg.git/" --work-tree="$HOME" checkout
       git --git-dir="$HOME/.cfg.git/" --work-tree="$HOME" config --local status.showUntrackedFiles no
+      echo -e "${GREEN}✓ Dotfiles checked out${NC}"
 
       # Install Oh My Zsh
-      if [ ! -d "$HOME/.oh-my-zsh" ]; then
+      echo -e "${GREEN}Installing Oh My Zsh...${NC}"
+      if [ -d "$HOME/.oh-my-zsh" ]; then
+        echo -e "${YELLOW}→ Oh My Zsh already installed, skipping...${NC}"
+      else
         git clone https://github.com/ohmyzsh/ohmyzsh.git "$HOME/.oh-my-zsh"
+        echo -e "${GREEN}✓ Oh My Zsh installed${NC}"
       fi
 
-      # Install Powerlevel10k
+      # Install Powerlevel10k theme
+      echo -e "${GREEN}Installing Powerlevel10k theme...${NC}"
       ZSH_CUSTOM="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"
-      if [ ! -d "$ZSH_CUSTOM/themes/powerlevel10k" ]; then
+      if [ -d "$ZSH_CUSTOM/themes/powerlevel10k" ]; then
+        echo -e "${YELLOW}→ Powerlevel10k already installed, skipping...${NC}"
+      else
         git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "$ZSH_CUSTOM/themes/powerlevel10k"
+        echo -e "${GREEN}✓ Powerlevel10k installed${NC}"
       fi
 
-      # Install zsh-vim-mode
-      if [ ! -d "$HOME/.oh-my-zsh/plugins/zsh-vim-mode" ]; then
+      # Install zsh-vim-mode plugin
+      echo -e "${GREEN}Installing zsh-vim-mode plugin...${NC}"
+      if [ -d "$HOME/.oh-my-zsh/plugins/zsh-vim-mode" ]; then
+        echo -e "${YELLOW}→ zsh-vim-mode already installed, skipping...${NC}"
+      else
         git clone https://github.com/softmoth/zsh-vim-mode.git "$HOME/.oh-my-zsh/plugins/zsh-vim-mode"
+        echo -e "${GREEN}✓ zsh-vim-mode installed${NC}"
+      fi
+
+      # Install iTerm2 shell integration (skip on Linux)
+      if [[ "$OSTYPE" == "darwin"* ]]; then
+        echo -e "${GREEN}Installing iTerm2 shell integration...${NC}"
+        if [ ! -f "$HOME/.iterm2_shell_integration.zsh" ]; then
+          curl -L https://iterm2.com/shell_integration/zsh -o "$HOME/.iterm2_shell_integration.zsh"
+          if ! grep -q "source ~/.iterm2_shell_integration.zsh" "$HOME/.zshrc" 2>/dev/null; then
+            printf "\nsource ~/.iterm2_shell_integration.zsh\n" >>"$HOME/.zshrc"
+            echo -e "${GREEN}✓ iTerm2 shell integration installed${NC}"
+          fi
+        else
+          echo -e "${YELLOW}→ iTerm2 shell integration already installed${NC}"
+        fi
+      else
+        echo -e "${YELLOW}→ Skipping iTerm2 integration (Linux system detected)${NC}"
       fi
 
       # Configure tmux
+      echo -e "${GREEN}Configuring tmux...${NC}"
       touch "$HOME/.tmux.conf"
-      grep -q "terminal-overrides.*xterm:Tc" "$HOME/.tmux.conf" 2>/dev/null || echo "set-option -ga terminal-overrides ',xterm:Tc'" >>"$HOME/.tmux.conf"
-      grep -q "set -g set-clipboard on" "$HOME/.tmux.conf" 2>/dev/null || echo "set -g set-clipboard on" >>"$HOME/.tmux.conf"
-      grep -q "set -g allow-passthrough on" "$HOME/.tmux.conf" 2>/dev/null || echo "set -g allow-passthrough on" >>"$HOME/.tmux.conf"
 
-      echo -e "${GREEN}Dotfiles setup complete!${NC}"
+      # Check and add tmux configurations if not present
+      if ! grep -q "terminal-overrides.*xterm:Tc" "$HOME/.tmux.conf" 2>/dev/null; then
+        echo "set-option -ga terminal-overrides ',xterm:Tc'" >>"$HOME/.tmux.conf"
+        echo -e "${GREEN}✓ Added true color support to tmux${NC}"
+      else
+        echo -e "${YELLOW}→ True color support already configured${NC}"
+      fi
+
+      if ! grep -q "set -g set-clipboard on" "$HOME/.tmux.conf" 2>/dev/null; then
+        echo "set -g set-clipboard on # nvim osc52" >>"$HOME/.tmux.conf"
+        echo -e "${GREEN}✓ Added clipboard support to tmux${NC}"
+      else
+        echo -e "${YELLOW}→ Clipboard support already configured${NC}"
+      fi
+
+      if ! grep -q "set -g allow-passthrough on" "$HOME/.tmux.conf" 2>/dev/null; then
+        echo "set -g allow-passthrough on # nvim osc52" >>"$HOME/.tmux.conf"
+        echo -e "${GREEN}✓ Added passthrough support to tmux${NC}"
+      else
+        echo -e "${YELLOW}→ Passthrough support already configured${NC}"
+      fi
+
+      echo -e "${GREEN}✅ Dotfiles setup complete!${NC}"
+      echo -e "${YELLOW}Note: Backed up files can be found in ~/.config-backup/${NC}"
 
   # Environment variables for zsh
   - path: /home/vya/.zshenv.local

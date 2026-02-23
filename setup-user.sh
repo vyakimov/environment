@@ -8,6 +8,8 @@ if ! command -v uv &>/dev/null; then
   export PATH="$HOME/.local/bin:$PATH"
 fi
 
+curl -fsSL https://claude.ai/install.sh | bash
+
 uv python install 3.12
 uv venv --python 3.12
 
@@ -39,9 +41,9 @@ curl -sSL -o "$HOME/.cache/gitstatus/gitstatusd-linux-x86_64" \
 chmod +x "$HOME/.cache/gitstatus/gitstatusd-linux-x86_64"
 
 # ── Terminfo ──
-curl -sSL https://raw.githubusercontent.com/alacritty/alacritty/master/extra/alacritty.info \
-  | tic -x - 2>/dev/null || true
-curl -sSL https://gist.githubusercontent.com/vyakimov/d17c01ab4ebab804e8393563980f557b/raw/9098c07250d144c71fd4bdb8873ec91673e68b14/ghostty.info \
-  | tic -x - 2>/dev/null || true
+curl -sSL https://raw.githubusercontent.com/alacritty/alacritty/master/extra/alacritty.info |
+  tic -x - 2>/dev/null || true
+curl -sSL https://gist.githubusercontent.com/vyakimov/d17c01ab4ebab804e8393563980f557b/raw/9098c07250d144c71fd4bdb8873ec91673e68b14/ghostty.info |
+  tic -x - 2>/dev/null || true
 
 echo "User setup complete."

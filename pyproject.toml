@@ -1,0 +1,6 @@
+[project]
+name = "environment"
+version = "0.0.1"
+description = "Pinned dependencies for the chat environment"
+requires-python = ">=3.12"
+dependencies = ["ipython", "pyright"]
