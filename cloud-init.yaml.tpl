@@ -25,7 +25,6 @@ packages:
   - unzip
   - tmux
   - python3-venv
-  - python3-pip
   # Locale and build tools
   - locales
   - build-essential
@@ -42,20 +41,6 @@ packages:
   - ca-certificates
   - gnupg
   - lsb-release
-  # Build dependencies for tmux (if building from source)
-  - libevent-dev
-  - ncurses-dev
-  - bison
-  # Python build dependencies
-  - libssl-dev
-  - zlib1g-dev
-  - libbz2-dev
-  - libreadline-dev
-  - libsqlite3-dev
-  - libffi-dev
-  - liblzma-dev
-  - tk-dev
-  - libxml2-dev
 
 # Locale setup
 locale: en_US.UTF-8
@@ -76,12 +61,12 @@ write_files:
     content: |
       {{ include: setup-user.sh }}
 
-  # Bootstrap script (dotfiles setup) — same as repo's bootstrap.sh
-  - path: /home/vya/bootstrap.sh
+  # Dotfiles setup (bare git repo checkout)
+  - path: /home/vya/setup-dotfiles.sh
     permissions: '0755'
     owner: vya:vya
     content: |
-      {{ include: bootstrap.sh }}
+      {{ include: setup-dotfiles.sh }}
 
   # Environment variables for zsh
   - path: /home/vya/.zshenv.local

@@ -7,11 +7,10 @@ This is a personal developer environment setup repo. It provisions a reproducibl
 ```
 setup-system.sh    # root-level tools (Node.js, Neovim, R, lazygit, etc.)
 setup-user.sh      # user-level config (uv, Python, Neovim plugins, dotfiles)
-bootstrap.sh       # dotfiles via bare git repo (~/.cfg.git)
+setup-dotfiles.sh  # dotfiles via bare git repo (~/.cfg.git)
 
-Dockerfile.pythonBase    # builds base image (Ubuntu 24.04 + uv + tmux)
-Dockerfile.environment   # extends base, runs setup-system.sh + setup-user.sh
-build.sh / run.sh        # Docker orchestration
+Dockerfile         # Ubuntu 24.04 + uv + setup scripts
+dev.sh             # Docker orchestration (build, rebuild, run)
 
 cloud-init.yaml.tpl      # VPS template with {{ include: filename.sh }} markers
 build-cloud-init.py      # resolves markers → writes cloud-init.yaml (generated)
@@ -22,12 +21,10 @@ cloud-init.yaml          # GENERATED — do not edit directly
 
 ### Docker (local dev)
 ```bash
-./build.sh python_base   # build base image
-./build.sh env           # build full environment
-./build.sh rebuild-env   # force rebuild (no cache)
-./build.sh run           # interactive session
-./run.sh                 # run as user (with SSH/Claude/Copilot mounts)
-./run.sh root            # run as root
+./dev.sh build        # build environment image
+./dev.sh rebuild      # force rebuild (no cache)
+./dev.sh run          # run as user (with SSH/Claude/Copilot mounts)
+./dev.sh run root     # run as root
 ```
 
 ### Cloud-init (VPS provisioning)
@@ -41,6 +38,7 @@ Paste `cloud-init.yaml` into the VPS provider's user-data field. The scripts run
 
 | Tool | Version |
 |------|---------|
+| tmux | 3.6a |
 | Node.js | 25.2.1 |
 | Neovim | 0.11.5 |
 | codex-acp | 0.9.2 |
@@ -58,7 +56,7 @@ To update a version, change the variable in `setup-system.sh` and rebuild.
 
 ## Secrets
 
-`.secrets` is gitignored. It is sourced by `build.sh` and `run.sh` as `--env-file`. It must exist locally for those scripts to work.
+`.secrets` is gitignored. It is sourced by `dev.sh` as `--env-file`. It must exist locally for Docker runs to work.
 
 ## Cloud-init Notes
 
@@ -77,9 +75,8 @@ Managed by `uv`. After `setup-user.sh` runs:
 - Tools: `vectorcode[lsp,mcp]`, `ipython`, `pyright`
 - Key env vars: `VIRTUAL_ENV`, `UV_CACHE_DIR`, `UV_PROJECT_ENVIRONMENT`
 
-Defined in `pyproject.toml` (workspace root); `deepseek-ocr` is a workspace member (directory may not be present).
 
-## Docker Volume Mounts (run.sh)
+## Docker Volume Mounts (dev.sh run)
 
 | Host path | Container path |
 |-----------|---------------|
@@ -87,12 +84,13 @@ Defined in `pyproject.toml` (workspace root); `deepseek-ocr` is a workspace memb
 | `$HOME/.ssh` | `/home/user/.ssh` |
 | `$HOME/.claude` | `/home/user/.claude` |
 | `$HOME/.config/github-copilot` | `/home/user/.config/github-copilot` |
+| `$HOME/mount` | `/mount` |
 
 Runs with `--net=host` and `--gpus all`.
 
 ## Dotfiles
 
-`bootstrap.sh` uses a bare git repo approach:
+`setup-dotfiles.sh` uses a bare git repo approach:
 - Remote: `https://github.com/vyakimov/dotfiles.git`
 - Bare repo: `~/.cfg.git`, work tree: `~/`
 - Conflicts backed up to `~/.config-backup/`

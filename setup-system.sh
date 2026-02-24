@@ -2,6 +2,7 @@
 set -euo pipefail
 
 # ── Version pins (single source of truth) ──
+TMUX_VERSION=3.6a
 NODE_VERSION=25.2.1
 NVIM_VERSION=0.11.5
 CODEX_ACP_VERSION=0.9.2
@@ -18,7 +19,7 @@ update-locale LANG=en_US.UTF-8
 curl -fsSL https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc |
   tee -a /etc/apt/trusted.gpg.d/cran_ubuntu_key.asc >/dev/null
 echo "deb https://cloud.r-project.org/bin/linux/ubuntu noble-cran40/" \
-  >>/etc/apt/sources.list
+  > /etc/apt/sources.list.d/cran.list
 
 # ── APT packages ──
 apt-get update
@@ -27,7 +28,11 @@ apt-get install -y \
   software-properties-common zsh wget unzip luarocks
 apt-get clean
 rm -rf /var/lib/apt/lists/*
-sed -i '$d' /etc/apt/sources.list
+rm -f /etc/apt/sources.list.d/cran.list
+
+# ── tmux ──
+curl -sSL "https://github.com/tmux/tmux-builds/releases/download/v${TMUX_VERSION}/tmux-${TMUX_VERSION}-linux-x86_64.tar.gz" |
+  tar xz -C /usr/local/bin
 
 # ── Node.js ──
 curl -LO "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.gz"

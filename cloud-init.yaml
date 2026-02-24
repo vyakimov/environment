@@ -29,7 +29,6 @@ packages:
   - unzip
   - tmux
   - python3-venv
-  - python3-pip
   # Locale and build tools
   - locales
   - build-essential
@@ -46,20 +45,6 @@ packages:
   - ca-certificates
   - gnupg
   - lsb-release
-  # Build dependencies for tmux (if building from source)
-  - libevent-dev
-  - ncurses-dev
-  - bison
-  # Python build dependencies
-  - libssl-dev
-  - zlib1g-dev
-  - libbz2-dev
-  - libreadline-dev
-  - libsqlite3-dev
-  - libffi-dev
-  - liblzma-dev
-  - tk-dev
-  - libxml2-dev
 
 # Locale setup
 locale: en_US.UTF-8
@@ -75,6 +60,7 @@ write_files:
       set -euo pipefail
 
       # ── Version pins (single source of truth) ──
+      TMUX_VERSION=3.6a
       NODE_VERSION=25.2.1
       NVIM_VERSION=0.11.5
       CODEX_ACP_VERSION=0.9.2
@@ -91,7 +77,7 @@ write_files:
       curl -fsSL https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc |
         tee -a /etc/apt/trusted.gpg.d/cran_ubuntu_key.asc >/dev/null
       echo "deb https://cloud.r-project.org/bin/linux/ubuntu noble-cran40/" \
-        >>/etc/apt/sources.list
+        > /etc/apt/sources.list.d/cran.list
 
       # ── APT packages ──
       apt-get update
@@ -100,7 +86,11 @@ write_files:
         software-properties-common zsh wget unzip luarocks
       apt-get clean
       rm -rf /var/lib/apt/lists/*
-      sed -i '$d' /etc/apt/sources.list
+      rm -f /etc/apt/sources.list.d/cran.list
+
+      # ── tmux ──
+      curl -sSL "https://github.com/tmux/tmux-builds/releases/download/v${TMUX_VERSION}/tmux-${TMUX_VERSION}-linux-x86_64.tar.gz" |
+        tar xz -C /usr/local/bin
 
       # ── Node.js ──
       curl -LO "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.gz"
@@ -170,10 +160,27 @@ write_files:
       fi
       nvim --headless "+Lazy! sync" +qa || true
 
-      # ── Dotfiles (bootstrap.sh) ──
-      if [ -f "$HOME/bootstrap.sh" ]; then
-        chmod +x "$HOME/bootstrap.sh"
-        "$HOME/bootstrap.sh"
+      # ── Dotfiles ──
+      if [ -f "$HOME/setup-dotfiles.sh" ]; then
+        chmod +x "$HOME/setup-dotfiles.sh"
+        "$HOME/setup-dotfiles.sh"
+      fi
+
+      # ── Zsh ecosystem ──
+      if [ -d "$HOME/.oh-my-zsh" ]; then
+        echo "Oh My Zsh already installed, skipping..."
+      else
+        git clone https://github.com/ohmyzsh/ohmyzsh.git "$HOME/.oh-my-zsh"
+      fi
+
+      ZSH_CUSTOM="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"
+
+      if [ ! -d "$ZSH_CUSTOM/themes/powerlevel10k" ]; then
+        git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "$ZSH_CUSTOM/themes/powerlevel10k"
+      fi
+
+      if [ ! -d "$HOME/.oh-my-zsh/plugins/zsh-vim-mode" ]; then
+        git clone https://github.com/softmoth/zsh-vim-mode.git "$HOME/.oh-my-zsh/plugins/zsh-vim-mode"
       fi
 
       # ── gitstatusd (powerlevel10k) ──
@@ -190,8 +197,8 @@ write_files:
 
       echo "User setup complete."
 
-  # Bootstrap script (dotfiles setup) — same as repo's bootstrap.sh
-  - path: /home/vya/bootstrap.sh
+  # Dotfiles setup (bare git repo checkout)
+  - path: /home/vya/setup-dotfiles.sh
     permissions: '0755'
     owner: vya:vya
     content: |
@@ -253,76 +260,6 @@ write_files:
       git --git-dir="$HOME/.cfg.git/" --work-tree="$HOME" checkout
       git --git-dir="$HOME/.cfg.git/" --work-tree="$HOME" config --local status.showUntrackedFiles no
       echo -e "${GREEN}✓ Dotfiles checked out${NC}"
-
-      # Install Oh My Zsh
-      echo -e "${GREEN}Installing Oh My Zsh...${NC}"
-      if [ -d "$HOME/.oh-my-zsh" ]; then
-        echo -e "${YELLOW}→ Oh My Zsh already installed, skipping...${NC}"
-      else
-        git clone https://github.com/ohmyzsh/ohmyzsh.git "$HOME/.oh-my-zsh"
-        echo -e "${GREEN}✓ Oh My Zsh installed${NC}"
-      fi
-
-      # Install Powerlevel10k theme
-      echo -e "${GREEN}Installing Powerlevel10k theme...${NC}"
-      ZSH_CUSTOM="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"
-      if [ -d "$ZSH_CUSTOM/themes/powerlevel10k" ]; then
-        echo -e "${YELLOW}→ Powerlevel10k already installed, skipping...${NC}"
-      else
-        git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "$ZSH_CUSTOM/themes/powerlevel10k"
-        echo -e "${GREEN}✓ Powerlevel10k installed${NC}"
-      fi
-
-      # Install zsh-vim-mode plugin
-      echo -e "${GREEN}Installing zsh-vim-mode plugin...${NC}"
-      if [ -d "$HOME/.oh-my-zsh/plugins/zsh-vim-mode" ]; then
-        echo -e "${YELLOW}→ zsh-vim-mode already installed, skipping...${NC}"
-      else
-        git clone https://github.com/softmoth/zsh-vim-mode.git "$HOME/.oh-my-zsh/plugins/zsh-vim-mode"
-        echo -e "${GREEN}✓ zsh-vim-mode installed${NC}"
-      fi
-
-      # Install iTerm2 shell integration (skip on Linux)
-      if [[ "$OSTYPE" == "darwin"* ]]; then
-        echo -e "${GREEN}Installing iTerm2 shell integration...${NC}"
-        if [ ! -f "$HOME/.iterm2_shell_integration.zsh" ]; then
-          curl -L https://iterm2.com/shell_integration/zsh -o "$HOME/.iterm2_shell_integration.zsh"
-          if ! grep -q "source ~/.iterm2_shell_integration.zsh" "$HOME/.zshrc" 2>/dev/null; then
-            printf "\nsource ~/.iterm2_shell_integration.zsh\n" >>"$HOME/.zshrc"
-            echo -e "${GREEN}✓ iTerm2 shell integration installed${NC}"
-          fi
-        else
-          echo -e "${YELLOW}→ iTerm2 shell integration already installed${NC}"
-        fi
-      else
-        echo -e "${YELLOW}→ Skipping iTerm2 integration (Linux system detected)${NC}"
-      fi
-
-      # Configure tmux
-      echo -e "${GREEN}Configuring tmux...${NC}"
-      touch "$HOME/.tmux.conf"
-
-      # Check and add tmux configurations if not present
-      if ! grep -q "terminal-overrides.*xterm:Tc" "$HOME/.tmux.conf" 2>/dev/null; then
-        echo "set-option -ga terminal-overrides ',xterm:Tc'" >>"$HOME/.tmux.conf"
-        echo -e "${GREEN}✓ Added true color support to tmux${NC}"
-      else
-        echo -e "${YELLOW}→ True color support already configured${NC}"
-      fi
-
-      if ! grep -q "set -g set-clipboard on" "$HOME/.tmux.conf" 2>/dev/null; then
-        echo "set -g set-clipboard on # nvim osc52" >>"$HOME/.tmux.conf"
-        echo -e "${GREEN}✓ Added clipboard support to tmux${NC}"
-      else
-        echo -e "${YELLOW}→ Clipboard support already configured${NC}"
-      fi
-
-      if ! grep -q "set -g allow-passthrough on" "$HOME/.tmux.conf" 2>/dev/null; then
-        echo "set -g allow-passthrough on # nvim osc52" >>"$HOME/.tmux.conf"
-        echo -e "${GREEN}✓ Added passthrough support to tmux${NC}"
-      else
-        echo -e "${YELLOW}→ Passthrough support already configured${NC}"
-      fi
 
       echo -e "${GREEN}✅ Dotfiles setup complete!${NC}"
       echo -e "${YELLOW}Note: Backed up files can be found in ~/.config-backup/${NC}"

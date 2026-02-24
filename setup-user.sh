@@ -28,10 +28,27 @@ if [ ! -d "$HOME/.config/nvim" ]; then
 fi
 nvim --headless "+Lazy! sync" +qa || true
 
-# ── Dotfiles (bootstrap.sh) ──
-if [ -f "$HOME/bootstrap.sh" ]; then
-  chmod +x "$HOME/bootstrap.sh"
-  "$HOME/bootstrap.sh"
+# ── Dotfiles ──
+if [ -f "$HOME/setup-dotfiles.sh" ]; then
+  chmod +x "$HOME/setup-dotfiles.sh"
+  "$HOME/setup-dotfiles.sh"
+fi
+
+# ── Zsh ecosystem ──
+if [ -d "$HOME/.oh-my-zsh" ]; then
+  echo "Oh My Zsh already installed, skipping..."
+else
+  git clone https://github.com/ohmyzsh/ohmyzsh.git "$HOME/.oh-my-zsh"
+fi
+
+ZSH_CUSTOM="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"
+
+if [ ! -d "$ZSH_CUSTOM/themes/powerlevel10k" ]; then
+  git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "$ZSH_CUSTOM/themes/powerlevel10k"
+fi
+
+if [ ! -d "$HOME/.oh-my-zsh/plugins/zsh-vim-mode" ]; then
+  git clone https://github.com/softmoth/zsh-vim-mode.git "$HOME/.oh-my-zsh/plugins/zsh-vim-mode"
 fi
 
 # ── gitstatusd (powerlevel10k) ──
