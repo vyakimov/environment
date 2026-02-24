@@ -82,7 +82,10 @@ Managed by `uv`. After `setup-user.sh` runs:
 |-----------|---------------|
 | `$PWD` | `/app` |
 | `$HOME/.ssh` | `/home/user/.ssh` |
-| `$HOME/.claude` | `/home/user/.claude` |
+| `$HOME/.claude/.credentials.json` | `/home/user/.claude/.credentials.json` |
+| `$HOME/.claude/settings.json` | `/home/user/.claude/settings.json` |
+| `$HOME/.claude/projects/` | `/home/user/.claude/projects/` |
+| `$HOME/.codex` | `/home/user/.codex` |
 | `$HOME/.config/github-copilot` | `/home/user/.config/github-copilot` |
 | `$HOME/mount` | `/mount` |
 

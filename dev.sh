@@ -22,7 +22,10 @@ run() {
     --gpus all \
     -v "$PWD":/app/ \
     -v "$HOME"/.ssh/:/home/user/.ssh/ \
-    -v "$HOME"/.claude/:/home/user/.claude/ \
+    -v "$HOME"/.claude/.credentials.json:/home/user/.claude/.credentials.json \
+    -v "$HOME"/.claude/settings.json:/home/user/.claude/settings.json \
+    -v "$HOME"/.claude/projects/:/home/user/.claude/projects/ \
+    -v "$HOME"/.codex/:/home/user/.codex/ \
     -v "$HOME"/.config/github-copilot/:/home/user/.config/github-copilot/ \
     -v "$HOME"/mount:/mount \
     --env-file .secrets \
